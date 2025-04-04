@@ -660,6 +660,7 @@ void RPiCamApp::StartCamera()
 		}
 
 		LOG(2, "Using crop (main) " << crops.back().toString());
+		LOG(2, "Sensor Area " << sensor_area.toString());
 
 		if (options_->lores_width != 0 && options_->lores_height != 0 && !options_->lores_par)
 		{
