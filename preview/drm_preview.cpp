@@ -33,6 +33,7 @@ public:
 		h = max_image_height_;
 	}
 
+	void SetInfoText(const std::string &text) override { LOG(2, text); }
 private:
 	struct Buffer
 	{
