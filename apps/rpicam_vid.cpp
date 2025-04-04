@@ -13,6 +13,7 @@
 
 #include "core/rpicam_encoder.hpp"
 #include "output/output.hpp"
+#include "core/camera_control_unit.hpp"
 
 using namespace std::placeholders;
 
@@ -75,6 +76,8 @@ static void event_loop(RPiCamEncoder &app)
 	app.StartCamera();
 	auto start_time = std::chrono::high_resolution_clock::now();
 
+	CameraControlUnit ccu = CameraControlUnit(&app, 56788);
+
 	// Monitoring for keypresses and signals.
 	signal(SIGUSR1, default_signal_handler);
 	signal(SIGUSR2, default_signal_handler);
@@ -102,6 +105,8 @@ static void event_loop(RPiCamEncoder &app)
 		int key = get_key_or_signal(options, p);
 		if (key == '\n')
 			output->Signal();
+
+		ccu.run();
 
 		LOG(2, "Viewfinder frame " << count);
 		auto now = std::chrono::high_resolution_clock::now();
