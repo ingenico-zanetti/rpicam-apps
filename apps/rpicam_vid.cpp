@@ -131,6 +131,7 @@ static void event_loop(RPiCamEncoder &app)
 			count = 0; // reset the "frames encoded" counter too
 		}
 		app.ShowPreview(completed_request, app.VideoStream());
+		ccu.updateFromMetadata(completed_request->metadata);
 	}
 }
 

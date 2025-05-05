@@ -26,6 +26,7 @@ class CameraControlUnit
 		CameraControlUnit(RPiCamApp *app, unsigned short tcpListenPort);
 		~CameraControlUnit();
 		int run(void);
+		void updateFromMetadata(libcamera::ControlList &metadata);
 	private:
 
 	RPiCamApp *cameraApp;
@@ -33,6 +34,7 @@ class CameraControlUnit
 	struct pollfd clients[CAMERA_CONTROL_UNIT_MAX_CLIENT];
 	InputParser parsers[CAMERA_CONTROL_UNIT_MAX_CLIENT];
 	void sendString(int fd, const char *szString);
+	void printControl(int fd, const libcamera::ControlId *second);
 	int parseInput(int clientIndex, char *input, int inputLen);
 	int analyseInput(int clientIndex);
 

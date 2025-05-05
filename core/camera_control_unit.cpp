@@ -89,8 +89,14 @@ int CameraControlUnit::analyseInput(int clientIndex){
 	if(0 == parser->index){
 		// Empty request
 		char emptyRequest[128];
-		snprintf(emptyRequest, sizeof(emptyRequest) - 1, "Empty Request from client at index %2d" "\n", clientIndex);
+		const libcamera::ControlList &properties = cameraApp->GetProperties();
+		snprintf(emptyRequest, sizeof(emptyRequest) - 1, "Empty request from client at index %2d: properties.size()=%lu" "\n", clientIndex, properties.size());
 		sendString(clients[clientIndex].fd, emptyRequest);
+		for(auto iter = properties.begin() ; iter != properties.end() ; iter++){
+			snprintf(emptyRequest, sizeof(emptyRequest) - 1, "%d:%s" "\n", iter->first, iter->second.toString().c_str());
+			sendString(clients[clientIndex].fd, emptyRequest);
+		}
+
 	}else{
 		char clientRequest[128 + CAMERA_CONTROL_UNIT_PARSER_BUFFER_SIZE];
 		snprintf(clientRequest, sizeof(clientRequest) - 1, "Request from client at index %2d (%u/%u): %s" "\n", clientIndex, parser->index, (unsigned int)sizeof(parser->buffer) - 1, parser->buffer);
@@ -177,10 +183,12 @@ int CameraControlUnit::analyseInput(int clientIndex){
 						snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested analogue gain: %fdB" "\n", dB);
 						sendString(clients[clientIndex].fd, clientRequest);
 						if(0.0 <= dB && dB <= 27.0){
+							float digitalGain = 1.0f;
 							float analogueGain = powf(10, dB / 20.0f);
 							snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested gain %fdB leads to linearGain %f" "\n", dB, analogueGain);
 							libcamera::ControlList controls;
 							controls.set(controls::AnalogueGain, analogueGain);
+							controls.set(controls::DigitalGain, digitalGain);
 							cameraApp->SetControls(controls);
 						}else{
 							snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested dB gain MUST be in [0 .. 27]" "\n");
@@ -217,6 +225,16 @@ int CameraControlUnit::parseInput(int clientIndex, char *buffer, int bufferLen){
 	return(parser->index);
 }
 
+void CameraControlUnit::printControl(int fd, const libcamera::ControlId *second){
+	char debugString[256];
+	int controlType = second->type();
+	size_t controlSize = second->size();
+	const char *name = second->name().c_str();
+	const char *vendor = second->vendor().c_str();
+	snprintf(debugString, sizeof(debugString) - 1, "id():%5d,type:%d,size:%lu,name():%s,vendor():%s" "\n", second->id(), controlType, controlSize, name, vendor);
+	sendString(fd, debugString);
+}
+
 int CameraControlUnit::run(void){
 	int returnValue = 0;
 	// Check incoming connections
@@ -231,6 +249,12 @@ int CameraControlUnit::run(void){
 			ioctl(fd, FIONBIO, &nonBlocking);
 			updateFirstFreeSlot();
 			sendString(fd, BANNER);
+			char debugString[256];
+			snprintf(debugString, sizeof(debugString) - 1, "libcamera::controls::controls.size()=%lu" "\n", libcamera::controls::controls.size());
+			sendString(fd, debugString);
+			for(auto iter = libcamera::controls::controls.begin() ; iter != libcamera::controls::controls.end() ; iter++){
+				printControl(fd, iter->second);
+			}
 			returnValue++;
 		}
 	}
@@ -258,4 +282,92 @@ int CameraControlUnit::run(void){
 	}
 	return returnValue;
 }
+
+void CameraControlUnit::updateFromMetadata(libcamera::ControlList &metadata){
+#if 0
+	int fd = clients[0].fd;
+	if(fd > 0){
+		char emptyRequest[256];
+		snprintf(emptyRequest, sizeof(emptyRequest) - 1, "metadata.size()=%lu" "\n", metadata.size());
+		sendString(fd, emptyRequest);
+		for(auto iter = metadata.begin() ; iter != metadata.end() ; iter++){
+			switch(iter->first){
+				case libcamera::controls::AE_ENABLE:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "AE_ENABLE(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+				case libcamera::controls::AE_LOCKED:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "AE_LOCKED(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+				case libcamera::controls::AE_METERING_MODE:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "AE_METERING_MODE(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+				case libcamera::controls::AE_CONSTRAINT_MODE:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "AE_CONSTRAINT_MODE(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+				case libcamera::controls::AE_EXPOSURE_MODE:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "AE_EXPOSURE_MODE(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::EXPOSURE_VALUE:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "EXPOSURE_VALUE(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+				case libcamera::controls::EXPOSURE_TIME:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "EXPOSURE_TIME(%d):%sus" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::ANALOGUE_GAIN:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "ANALOGUE_GAIN(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+				case libcamera::controls::DIGITAL_GAIN:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "DIGITAL_GAIN(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+				case libcamera::controls::SENSOR_BLACK_LEVELS:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "SENSOR8BLACK_LEVELS(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+				case libcamera::controls::FRAME_DURATION:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "FRAME_DURATION(%d):%sus" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::FOCUS_FO_M:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "FOCUS_FO_M(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::LUX:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "LUX(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::COLOUR_CORRECTION_MATRIX:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "COLOUR_CORRECTION_MATRIX(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::COLOUR_TEMPERATURE:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "COLOUR_TEMPERATURE(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::COLOUR_GAINS:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "COLOUR_GAINS(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::SCALER_CROP:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "SCALER_CROP(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::SENSOR_TIMESTAMP:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "SENSOR_TIMESTAMP(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				case libcamera::controls::FRAME_WALL_CLOCK:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "FRAME_WALL_CLOCK(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+
+				default:
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "UNKNOWN(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					break;
+			}
+			sendString(fd, emptyRequest);
+		}
+	}
+#endif
+}
+
 
