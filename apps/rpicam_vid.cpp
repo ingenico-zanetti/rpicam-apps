@@ -106,14 +106,14 @@ static void event_loop(RPiCamEncoder &app)
 		if (key == '\n')
 			output->Signal();
 
-		ccu.run();
+		bool shutdown = ccu.run();
 
 		LOG(2, "Viewfinder frame " << count);
 		auto now = std::chrono::high_resolution_clock::now();
-		bool timeout = !options->Get().frames && options->Get().timeout &&
-					   ((now - start_time) > options->Get().timeout.value);
-		bool frameout = options->Get().frames && count >= options->Get().frames;
-		if (timeout || frameout || key == 'x' || key == 'X')
+		bool timeout = !options->frames && options->timeout &&
+					   ((now - start_time) > options->timeout.value);
+		bool frameout = options->frames && count >= options->frames;
+		if (shutdown || timeout || frameout || key == 'x' || key == 'X')
 		{
 			if (timeout)
 				LOG(1, "Halting: reached timeout of " << options->Get().timeout.get<std::chrono::milliseconds>()

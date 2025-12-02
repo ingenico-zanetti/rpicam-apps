@@ -48,10 +48,241 @@ int listenSocket(struct in_addr *address, unsigned short port){
         return listen_socket;
 }
 
+bool CameraControlUnit::shutdownCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested shutdown" "\n");
+			sendString(clients[index].fd, clientRequest);
+			shutdown = true;
+			break;
+	}
+	return(true);
+}
 
+bool CameraControlUnit::gaindbCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:{
+			float dB = strtof(args + 1, NULL);
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested analogue gain: %fdB" "\n", dB);
+			sendString(clients[index].fd, clientRequest);
+			if(0.0 <= dB && dB <= 27.0){
+				float digitalGain = 1.0f;
+				float analogueGain = powf(10, dB / 20.0f);
+				snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested gain %fdB leads to linearGain %f" "\n", dB, analogueGain);
+				sendString(clients[index].fd, clientRequest);
+				libcamera::ControlList controls;
+				controls.set(controls::AnalogueGain, analogueGain);
+				controls.set(controls::DigitalGain, digitalGain);
+				cameraApp->SetControls(controls);
+			}
+		}
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			break;
+	}
+	return(true);
+}
+
+bool CameraControlUnit::gainCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:{
+			float analogueGain = strtof(args + 1, NULL);
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested analogue gain: %f" "\n", analogueGain);
+			sendString(clients[index].fd, clientRequest);
+			float digitalGain = 1.0f;
+			libcamera::ControlList controls;
+			controls.set(controls::AnalogueGain, analogueGain);
+			controls.set(controls::DigitalGain, digitalGain);
+			cameraApp->SetControls(controls);
+		}
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			break;
+	}
+	return(true);
+}
+
+bool CameraControlUnit::shutterSpeedCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:{
+			float exposureTime = strtof(args + 1, NULL);
+			libcamera::ControlList controls;
+			controls.set(controls::ExposureTime, exposureTime);
+			cameraApp->SetControls(controls);
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested exposure time of %f microseconds" "\n", exposureTime);
+			sendString(clients[index].fd, clientRequest);
+		}
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			break;
+	}
+	return(true);
+}
+
+bool CameraControlUnit::shutterAngleCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	return(true);
+}
+
+bool CameraControlUnit::contrastCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:{
+			float exposureTime = strtof(args + 1, NULL);
+			libcamera::ControlList controls;
+			controls.set(controls::ExposureTime, exposureTime);
+			cameraApp->SetControls(controls);
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested exposure time of %f microseconds" "\n", exposureTime);
+			sendString(clients[index].fd, clientRequest);
+		}
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			break;
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	return(true);
+}
+
+bool CameraControlUnit::saturationCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:{
+			float exposureTime = strtof(args + 1, NULL);
+			libcamera::ControlList controls;
+			controls.set(controls::ExposureTime, exposureTime);
+			cameraApp->SetControls(controls);
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested exposure time of %f microseconds" "\n", exposureTime);
+			sendString(clients[index].fd, clientRequest);
+		}
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			break;
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	return(true);
+}
+
+bool CameraControlUnit::gammaCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:{
+			float exposureTime = strtof(args + 1, NULL);
+			libcamera::ControlList controls;
+			controls.set(controls::ExposureTime, exposureTime);
+			cameraApp->SetControls(controls);
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested exposure time of %f microseconds" "\n", exposureTime);
+			sendString(clients[index].fd, clientRequest);
+		}
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			break;
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	return(true);
+}
+
+bool CameraControlUnit::awbgainsCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:{
+			float exposureTime = strtof(args + 1, NULL);
+			float redGain, blueGain;
+			int parsed = sscanf(args + 1, "%f,%f", &redGain, &blueGain);
+			if(2 == parsed){
+				libcamera::ControlList controls;
+				controls.set(controls::AwbGains, exposureTime);
+				cameraApp->SetControls(controls);
+				snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested RED and BLUE gains: %f, %f" "\n", redGain, blueGain);
+			}else{
+				snprintf(clientRequest, sizeof(clientRequest) - 1, "Malformed parameters [%s]" "\n", args + 1);
+			}
+			sendString(clients[index].fd, clientRequest);
+		}
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			break;
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	return(true);
+}
+
+bool CameraControlUnit::temperatureCallback(int index, Ccu_Callback_Mode_e mode, const char *args){
+	char clientRequest[128];
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	switch(mode){
+		case CCU_CALLBACK_MODE_READ:
+			break;
+		case CCU_CALLBACK_MODE_WRITE:{
+			float temperature = strtof(args + 1, NULL);
+			if(1000.0 <= temperature && temperature <= 10000.0){
+				snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested temperature: %f" "\n", temperature);
+				libcamera::ControlList controls;
+				controls.set(controls::ColourTemperature, (uint32_t)temperature);
+				cameraApp->SetControls(controls);
+			}else{
+				snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested temperature MUST be in [2700 .. 5500]" "\n");
+			}
+			sendString(clients[clientIndex].fd, clientRequest);
+		}
+		break;
+		case CCU_CALLBACK_MODE_SYNTAX:
+			break;
+		default:
+			break;
+	fprintf(stderr, "%s(%i, mode=%i, %s)" "\n", __func__, index, mode, args);
+	return(true);
+}
 CameraControlUnit::CameraControlUnit(RPiCamApp *app, unsigned short tcpListenPort){
 	cameraApp = app;
-	struct in_addr listenAddress = {0}; // bind to this address for score connections
+	shutdown = false;
+	map["gain"] = &CameraControlUnit::gainCallback;
+	map["gaindb"] = &CameraControlUnit::gaindbCallback;
+	map["speed"] = &CameraControlUnit::shutterSpeedCallback;
+	map["angle"] = &CameraControlUnit::shutterAngleCallback;
+	map["shutdown"] = &CameraControlUnit::shutdownCallback;
+	struct in_addr listenAddress = {0}; // bind to this address for incoming connections
 	listeningSocket = listenSocket(&listenAddress, htons(tcpListenPort));
 	for(int i = 0 ; i < CAMERA_CONTROL_UNIT_MAX_CLIENT ; i++){
 		clients[i].fd = -1;
@@ -101,35 +332,32 @@ int CameraControlUnit::analyseInput(int clientIndex){
 		char clientRequest[128 + CAMERA_CONTROL_UNIT_PARSER_BUFFER_SIZE];
 		snprintf(clientRequest, sizeof(clientRequest) - 1, "Request from client at index %2d (%u/%u): %s" "\n", clientIndex, parser->index, (unsigned int)sizeof(parser->buffer) - 1, parser->buffer);
 		sendString(clients[clientIndex].fd, clientRequest);
+		Ccu_Callback_Mode_e mode = CCU_CALLBACK_MODE_COMMAND;
 		char *equal = strchr(parser->buffer, '=');
 		char *questionMark = strchr(parser->buffer, '?');
-		if(questionMark != 0){
-			*questionMark = '\0';
-		}
 		if(equal != NULL){
 			*equal = '\0';
-			if(questionMark == (equal + 1)){
-				// Though question !
+			mode = CCU_CALLBACK_MODE_WRITE;
+		}
+		if(questionMark != 0){
+			*questionMark = '\0';
+			if(CCU_CALLBACK_MODE_WRITE == mode){
+				mode = CCU_CALLBACK_MODE_SYNTAX;
 			}else{
-				char *start = equal + 1;
-				char *end = NULL;
-				float value = strtof(start, &end);
-				if(end != start){
-					if(!strcmp(parser->buffer, "angle")){
-						float angle = value;
-						snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested exposure angle: %f" "\n", angle);
-						sendString(clients[clientIndex].fd, clientRequest);
-						if(5.0 <= angle && angle <= 355.0){
-							float exposureTime = 33300.0 * angle / 360.0;
-							libcamera::ControlList controls;
-							controls.set(controls::ExposureTime, exposureTime);
-							cameraApp->SetControls(controls);
-							snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested exposure angle %f leads to exposure time of %f microseconds" "\n", angle, exposureTime);
-						}else{
-							snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested exposure angle MUST be in [5 .. 355]" "\n");
-						}
-						sendString(clients[clientIndex].fd, clientRequest);
-					}
+				mode = CCU_CALLBACK_MODE_READ;
+			}
+		}
+#if 1
+		auto iter = map.find(std::string(parser->buffer));
+		if(iter == map.end()){
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "%s: unknown keyword" "\n", parser->buffer);
+		}else{
+			bool success = (this->*(iter->second))(clientIndex, mode, equal);
+			snprintf(clientRequest, sizeof(clientRequest) - 1, "%s(): callback returned %i " "\n", parser->buffer, success);
+		}
+		sendString(clients[clientIndex].fd, clientRequest);
+
+#else
 					if(!strcmp(parser->buffer, "saturation")){
 						float saturation = value;
 						if(0.0 <= saturation && saturation <= 9.0){
@@ -167,37 +395,8 @@ int CameraControlUnit::analyseInput(int clientIndex){
 						sendString(clients[clientIndex].fd, clientRequest);
 					}
 					if(!strcmp(parser->buffer, "temperature")){
-						float temperature = value;
-						if(2700.0 <= temperature && temperature <= 5500.0){
-							snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested temperature: %f" "\n", temperature);
-							libcamera::ControlList controls;
-							controls.set(controls::ColourTemperature, (uint32_t)temperature);
-							cameraApp->SetControls(controls);
-						}else{
-							snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested temperature MUST be in [2700 .. 5500]" "\n");
-						}
-						sendString(clients[clientIndex].fd, clientRequest);
 					}
-					if(!strcmp(parser->buffer, "gain")){
-						float dB = value;
-						snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested analogue gain: %fdB" "\n", dB);
-						sendString(clients[clientIndex].fd, clientRequest);
-						if(0.0 <= dB && dB <= 27.0){
-							float digitalGain = 1.0f;
-							float analogueGain = powf(10, dB / 20.0f);
-							snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested gain %fdB leads to linearGain %f" "\n", dB, analogueGain);
-							libcamera::ControlList controls;
-							controls.set(controls::AnalogueGain, analogueGain);
-							controls.set(controls::DigitalGain, digitalGain);
-							cameraApp->SetControls(controls);
-						}else{
-							snprintf(clientRequest, sizeof(clientRequest) - 1, "Requested dB gain MUST be in [0 .. 27]" "\n");
-						}
-						sendString(clients[clientIndex].fd, clientRequest);
-					}
-				}
-			}
-		}
+#endif
 	}
 	return(0);
 }
@@ -235,8 +434,7 @@ void CameraControlUnit::printControl(int fd, const libcamera::ControlId *second)
 	sendString(fd, debugString);
 }
 
-int CameraControlUnit::run(void){
-	int returnValue = 0;
+bool CameraControlUnit::run(void){
 	// Check incoming connections
 	if(firstFreeSlot != -1){
 		pollfd checkIncomingConnection;
@@ -255,7 +453,6 @@ int CameraControlUnit::run(void){
 			for(auto iter = libcamera::controls::controls.begin() ; iter != libcamera::controls::controls.end() ; iter++){
 				printControl(fd, iter->second);
 			}
-			returnValue++;
 		}
 	}
 	// Check connected sockets for incoming data
@@ -269,18 +466,16 @@ int CameraControlUnit::run(void){
 				char rxBuffer[CAMERA_CONTROL_UNIT_PARSER_BUFFER_SIZE];
 				int received = read(clients[i].fd, rxBuffer, sizeof(rxBuffer));
 				parseInput(i, rxBuffer, received);
-				returnValue++;
 			}
 			if(clients[i].revents & (POLLERR | POLLHUP)){
 				close(clients[i].fd);
 				clients[i].fd = -1;
 				updateFirstFreeSlot();
 				parsers[i].index = 0;
-				returnValue++;
 			}
 		}
 	}
-	return returnValue;
+	return shutdown;
 }
 
 void CameraControlUnit::updateFromMetadata(libcamera::ControlList &metadata){
@@ -322,7 +517,7 @@ void CameraControlUnit::updateFromMetadata(libcamera::ControlList &metadata){
 					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "DIGITAL_GAIN(%d):%s" "\n", iter->first, iter->second.toString().c_str());
 					break;
 				case libcamera::controls::SENSOR_BLACK_LEVELS:
-					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "SENSOR8BLACK_LEVELS(%d):%s" "\n", iter->first, iter->second.toString().c_str());
+					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "SENSOR_BLACK_LEVELS(%d):%s" "\n", iter->first, iter->second.toString().c_str());
 					break;
 				case libcamera::controls::FRAME_DURATION:
 					snprintf(emptyRequest, sizeof(emptyRequest) - 1, "FRAME_DURATION(%d):%sus" "\n", iter->first, iter->second.toString().c_str());

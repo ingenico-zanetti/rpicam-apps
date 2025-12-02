@@ -20,12 +20,23 @@ struct InputParser {
 	char buffer[CAMERA_CONTROL_UNIT_PARSER_BUFFER_SIZE];
 };
 
+class CameraControlUnit;
+
+typedef enum {
+	CCU_CALLBACK_MODE_WRITE = 0,   // set a value  (speed=16000)
+	CCU_CALLBACK_MODE_READ = 1,    // get a value  (speed?)
+	CCU_CALLBACK_MODE_SYNTAX = 2,  // get syntax   (speed=?)
+	CCU_CALLBACK_MODE_COMMAND = 3  // send command (exit, quit, shutdown, ...)
+} Ccu_Callback_Mode_e;
+
+typedef bool (CameraControlUnit::*Callback)(int index, Ccu_Callback_Mode_e mode, const char * args);
+
 class CameraControlUnit
 {
 	public:
 		CameraControlUnit(RPiCamApp *app, unsigned short tcpListenPort);
 		~CameraControlUnit();
-		int run(void);
+		bool run(void);
 		void updateFromMetadata(libcamera::ControlList &metadata);
 	private:
 
@@ -37,6 +48,19 @@ class CameraControlUnit
 	void printControl(int fd, const libcamera::ControlId *second);
 	int parseInput(int clientIndex, char *input, int inputLen);
 	int analyseInput(int clientIndex);
+	std::unordered_map<std::string, Callback> map;
+	bool shutdown;
+
+	bool contrastCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool saturationCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool gammaCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool awbgainsCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool temperatureCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool shutdownCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool gaindbCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool gainCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool shutterSpeedCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
+	bool shutterAngleCallback(int index, Ccu_Callback_Mode_e mode, const char *args);
 
 	void updateFirstFreeSlot(void);
 	int firstFreeSlot;
